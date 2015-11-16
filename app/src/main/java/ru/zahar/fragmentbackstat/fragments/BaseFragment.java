@@ -19,7 +19,7 @@ public abstract class BaseFragment extends Fragment {
 	@Bind(R.id.text)
 	TextView textView;
 
-	private boolean addToBackStack = true;
+	private String previousFragment;
 
 	@Nullable
 	@Override
@@ -34,12 +34,12 @@ public abstract class BaseFragment extends Fragment {
 		return view;
 	}
 
-	public boolean addToBackStack(){
-		return addToBackStack;
+	public String getPreviousFragment() {
+		return previousFragment;
 	}
 
-	public void setAddToBackStack(boolean addToBackStack) {
-		this.addToBackStack = addToBackStack;
+	public void setPreviousFragment(String previousFragment) {
+		this.previousFragment = previousFragment;
 	}
 
 	protected abstract String getText();

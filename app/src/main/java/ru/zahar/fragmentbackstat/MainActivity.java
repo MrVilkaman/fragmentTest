@@ -12,11 +12,12 @@ import android.widget.Toast;
 
 import java.util.List;
 
+import ru.zahar.fragmentbackstat.fragments.BaseFragment;
 import ru.zahar.fragmentbackstat.fragments.Fragment1;
 
 public class MainActivity extends AppCompatActivity {
 
-	private Fragment nextFragment;
+	private BaseFragment nextFragment;
 
 	private boolean backStack;
 	private boolean isRoot;
@@ -32,19 +33,14 @@ public class MainActivity extends AppCompatActivity {
 		Fragment contentFragment = fm.findFragmentById(getContainerID());
 		if (contentFragment == null) {
 			contentFragment = createStartFragment();
-			loadRootFragment(new Fragment1(), false, true, false);
+			loadRootFragment(new Fragment1(), true, true, false);
 //			FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
 //			fragmentTransaction.add(getContainerID(), contentFragment);
 //			fragmentTransaction.addToBackStack(null);
 //			fragmentTransaction.commit();
 //			Log.i("MYTAG", "Add " + contentFragment.getClass().getSimpleName());
 		}
-		fm.addOnBackStackChangedListener(new FragmentManager.OnBackStackChangedListener() {
-			@Override
-			public void onBackStackChanged() {
 
-			}
-		});
 	}
 
 	private Fragment createStartFragment() {
@@ -54,8 +50,7 @@ public class MainActivity extends AppCompatActivity {
 	protected int getContainerID() {
 		return R.id.main;
 	}
-
-	public void loadRootFragment(Fragment fragment, boolean addToBackStack, boolean isRoot, boolean forceLoad) {
+	public void loadRootFragment(BaseFragment fragment, boolean addToBackStack, boolean isRoot, boolean forceLoad) {
 		nextFragment = fragment;
 		backStack = addToBackStack;
 		this.isRoot = isRoot;
@@ -88,8 +83,10 @@ public class MainActivity extends AppCompatActivity {
 
 	@Override
 	public void onBackPressed() {
-		if (hasChild()) {
-			super.onBackPressed();
+		FragmentManager supportFragmentManager = getSupportFragmentManager();
+		BaseFragment current = (BaseFragment) supportFragmentManager.findFragmentById(getContainerID());
+		if (current != null && current.getPreviousFragment() != null) {
+			supportFragmentManager.popBackStack(current.getPreviousFragment(), FragmentManager.POP_BACK_STACK_INCLUSIVE);
 		} else {
 			exit();
 		}
@@ -98,11 +95,11 @@ public class MainActivity extends AppCompatActivity {
 
 	void nextFragment() {
 		if (nextFragment != null) {
-			Fragment oldFragment = getSupportFragmentManager().findFragmentById(getContainerID());
-			boolean hasOldFragment = oldFragment != null;
+			BaseFragment currentFragment = (BaseFragment) getSupportFragmentManager().findFragmentById(getContainerID());
+			boolean hasOldFragment = currentFragment != null;
 			boolean isAlreadyLoaded = false;
 			if (hasOldFragment) {
-				isAlreadyLoaded = oldFragment.getClass().getSimpleName().equals(nextFragment.getClass().getSimpleName());
+				isAlreadyLoaded = currentFragment.getClass().getSimpleName().equals(nextFragment.getClass().getSimpleName());
 			}
 
 			if (!(hasOldFragment && isAlreadyLoaded)) {
@@ -111,12 +108,16 @@ public class MainActivity extends AppCompatActivity {
 				}
 				FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
 				boolean b = backStack || isRoot;
-				if (b) {
+				fragmentTransaction.replace(getContainerID(), nextFragment,nextFragment.getClass().getSimpleName());
+				if (currentFragment != null && !isRoot) {
+					nextFragment.setPreviousFragment(b ? currentFragment.getClass().getSimpleName() : currentFragment.getPreviousFragment());
+					fragmentTransaction.addToBackStack(currentFragment.getClass().getSimpleName());
+				}else{
+					nextFragment.setPreviousFragment(null);
 					fragmentTransaction.addToBackStack(null);
 				}
-				fragmentTransaction.replace(getContainerID(), nextFragment);
 				fragmentTransaction.commit();
-				Log.i("MYTAG",nextFragment.getClass().getSimpleName() +" "+ b);
+						Log.i("MYTAG", nextFragment.getClass().getSimpleName() +" "+ b);
 			}
 			nextFragment = null;
 		}
